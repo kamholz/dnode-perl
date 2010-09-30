@@ -93,7 +93,7 @@ sub _scrub {
             my $id = $self->{last_id};
             $self->{callbacks}{$id} = $obj;
             $callbacks{$id} = [ @path ];
-            return sub { $self->_request($id, @_) };
+            return '[ Function ]';
         }
         elsif ($ref eq 'GLOB') {
             die 'Glob refs not supported';
