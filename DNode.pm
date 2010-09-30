@@ -4,6 +4,7 @@ use v5.10.0;
 use IO::Socket::INET;
 use IO::Select;
 use JSON qw/encode_json decode_json/;
+use Class::Inspector;
 
 sub new {
     my $class = shift;
@@ -11,6 +12,9 @@ sub new {
     return bless {
         constructor => $ctr,
         events => {},
+        remote => {},
+        callbacks => {},
+        last_id => 0,
     }, $class;
 }
 
@@ -27,7 +31,14 @@ sub connect {
     my $block = (first { ref eq 'CODE' }) // sub { };
     $self->{sock} = IO::Socket::INET->new(PeerAddr => $host, PeerPort => $port)
         or die "Connect failed: $!";
-    $self->_request('methods');
+    
+    my $conn = {};
+    
+    $self->_request('methods',
+        ref $self->{constructor} eq 'CODE'
+            ? $self->{constructor}($remote, $conn)
+            : $self->{constructor}
+    );
 }
 
 sub listen {
@@ -40,10 +51,67 @@ sub _request {
     my $sock = $self->{sock};
     print $sock encode_json({
         method => $method,
-        arguments => [ @args ],
+        arguments => $self->_scrub(\@args),
         callbacks => {},
         links => [],
     }), "\n";
+}
+
+sub _scrub {
+    my $self = shift;
+    
+    my @path;
+    my %callbacks;
+    
+    my $scrubbed = walk(shift);
+    return { object => $scrubbed, callbacks => \%callbacks };
+    
+    sub walk {
+        my $obj = shift;
+        my $ref = ref $obj;
+        
+        if ($ref eq 'HASH') {
+            return { map {
+                my $key = $_;
+                push @path, $key;
+                my $walked = walk($obj->{$_});
+                pop @path;
+                $key => $walked;
+            } keys %$obj };
+        }
+        elsif ($ref eq 'ARRAY') {
+            my @acc;
+            for my $i (0 .. $#$obj) {
+                push @path, $i;
+                push @acc, walk($obj->[$i]);
+                pop @path;
+            }
+            return \@acc;
+        }
+        elsif ($ref eq 'CODE') {
+            $self->{last_id} ++;
+            my $id = $self->{last_id};
+            $self->{callbacks}{$id} = $obj;
+            $callbacks{$id} = [ @path ];
+            return sub { $self->_request($id, @_) };
+        }
+        elsif ($ref eq 'GLOB') {
+            die 'Glob refs not supported';
+        }
+        elsif ($ref eq 'Regexp') {
+            die 'Regexp refs not supported'
+        }
+        elsif ($ref eq '') {
+            return $obj;
+        }
+        elsif ($ref->isa('HASH')) {
+            #my @blessed = @{ Class::Inspector->methods($obj) // [] };
+            return walk({ %$obj });
+        }
+        elsif ($ref->isa('ARRAY')) {
+            return walk({ @$obj });
+        }
+    }
 }
 
 1;
