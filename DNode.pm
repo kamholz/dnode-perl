@@ -1,5 +1,7 @@
 package DNode;
 use v5.10.0;
+use strict;
+use warnings;
 
 use IO::Socket::INET;
 use IO::Select;
@@ -36,7 +38,7 @@ sub connect {
     
     $self->_request('methods',
         ref $self->{constructor} eq 'CODE'
-            ? $self->{constructor}($remote, $conn)
+            ? $self->{constructor}($self->{remote}, $conn)
             : $self->{constructor}
     );
 }
@@ -49,24 +51,23 @@ sub _request {
     my $self = shift;
     my ($method, @args) = @_;
     my $sock = $self->{sock};
+    my $scrub = $self->_scrub(\@args);
     print $sock encode_json({
         method => $method,
-        arguments => $self->_scrub(\@args),
-        callbacks => {},
+        arguments => $scrub->{object},
+        callbacks => $scrub->{callbacks},
         links => [],
     }), "\n";
 }
 
 sub _scrub {
     my $self = shift;
+    my $target = shift;
     
     my @path;
     my %callbacks;
     
-    my $scrubbed = walk(shift);
-    return { object => $scrubbed, callbacks => \%callbacks };
-    
-    sub walk {
+    my $walk; $walk = sub {
         my $obj = shift;
         my $ref = ref $obj;
         
@@ -74,7 +75,7 @@ sub _scrub {
             return { map {
                 my $key = $_;
                 push @path, $key;
-                my $walked = walk($obj->{$_});
+                my $walked = $walk->($obj->{$_});
                 pop @path;
                 $key => $walked;
             } keys %$obj };
@@ -83,7 +84,7 @@ sub _scrub {
             my @acc;
             for my $i (0 .. $#$obj) {
                 push @path, $i;
-                push @acc, walk($obj->[$i]);
+                push @acc, $walk->($obj->[$i]);
                 pop @path;
             }
             return \@acc;
@@ -106,12 +107,14 @@ sub _scrub {
         }
         elsif ($ref->isa('HASH')) {
             #my @blessed = @{ Class::Inspector->methods($obj) // [] };
-            return walk({ %$obj });
+            return $walk->({ %$obj });
         }
         elsif ($ref->isa('ARRAY')) {
-            return walk({ @$obj });
+            return $walk->({ @$obj });
         }
-    }
+    };
+    
+    return { object => $walk->($target), callbacks => \%callbacks };
 }
 
 1;
