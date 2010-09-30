@@ -3,10 +3,9 @@ use v5.10.0;
 use strict;
 use warnings;
 
-use IO::Socket::INET;
-use IO::Select;
-use JSON qw/encode_json decode_json/;
-use Class::Inspector;
+use AnyEvent::Socket qw/tcp_connect/;
+use AnyEvent::Handle;
+#use Class::Inspector;
 
 sub new {
     my $class = shift;
@@ -31,16 +30,25 @@ sub connect {
     my $host = (first { ref eq '' and !/^\d+$/ } @_) // 'localhost';
     my $port = first { ref eq '' and m/^\d+$/ } @_ or die 'No port specified';
     my $block = (first { ref eq 'CODE' }) // sub { };
-    $self->{sock} = IO::Socket::INET->new(PeerAddr => $host, PeerPort => $port)
-        or die "Connect failed: $!";
     
     my $conn = {};
     
-    $self->_request('methods',
-        ref $self->{constructor} eq 'CODE'
+    my $cv = AnyEvent->condvar;
+    tcp_connect $host, $port, sub {
+        my $fh = shift;
+        $self->{handle} = new AnyEvent::Handle(fh => $fh);
+        my $handler; $handler = sub {
+            my ($h, $json) = @_;
+            $self->_handle($json);
+            $h->push_read(json => $handler);
+        };
+        $self->{handle}->push_read(json => $handler);
+        $self->_request('methods', ref $self->{constructor} eq 'CODE'
             ? $self->{constructor}($self->{remote}, $conn)
             : $self->{constructor}
-    );
+        );
+    };
+    $cv->recv;
 }
 
 sub listen {
@@ -50,14 +58,20 @@ sub listen {
 sub _request {
     my $self = shift;
     my ($method, @args) = @_;
-    my $sock = $self->{sock};
     my $scrub = $self->_scrub(\@args);
-    print $sock encode_json({
+    $self->{handle}->push_write(json => {
         method => $method,
         arguments => $scrub->{object},
         callbacks => $scrub->{callbacks},
         links => [],
-    }), "\n";
+    });
+    $self->{handle}->push_write("\n");
+}
+
+sub _handle {
+    my $self = shift;
+    my $json = shift;
+    print "json=$json\n";
 }
 
 sub _scrub {
