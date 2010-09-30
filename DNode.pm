@@ -70,8 +70,15 @@ sub _request {
 
 sub _handle {
     my $self = shift;
-    my $json = shift;
-    print "json=$json\n";
+    my $req = shift;
+    if ($req->{method} =~ m/^\d+$/) {
+        my $args = $self->_unscrub($req);
+        my $id = $req->{method};
+        $self->{callbacks}{$id}(@$args)
+    }
+    elsif ($req->{method} eq 'methods') {
+        $self->{remote} = $self->_unscrub($req)->[0];
+    }
 }
 
 sub _scrub {
@@ -129,6 +136,12 @@ sub _scrub {
     };
     
     return { object => $walk->($target), callbacks => \%callbacks };
+}
+
+sub _unscrub {
+    my $self = shift;
+    my $req = shift;
+    return $req->{arguments}; # for now
 }
 
 1;
