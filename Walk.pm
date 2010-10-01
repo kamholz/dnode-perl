@@ -12,7 +12,10 @@ sub walk {
 
 sub _walk {
     my ($self, $obj, $cb) = @_;
-    my $node = Node->new($obj);
+    my $node = Node->new(
+        value => $obj,
+        path => $self->{path},
+    );
     $cb->($node);
     
     my $value = $node->value;
@@ -51,11 +54,10 @@ sub _walk {
 package Node;
 
 sub new {
-    my ($class, $value) = @_;
-    return bless { value => $value }, $class;
+    my $class = shift;
+    return bless { @_ }, $class;
 }
-
 sub value { (shift)->{value} }
-sub path { (shift)->{path} }
+sub path { @{ (shift)->{path} } }
 
 1;

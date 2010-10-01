@@ -10,7 +10,7 @@ sub scrub {
     my $obj = shift;
     
     my %callbacks;
-    my $walk = Walk->new($obj, sub {
+    my $walked = Walk->new($obj)->walk(sub {
         my $node = shift;
         my $ref = ref $node->value;
         if ($ref eq 'CODE') {
@@ -21,13 +21,16 @@ sub scrub {
         }
     });
     
-    return { object => $walk, callbacks => \%callbacks };
+    return { object => $walked, callbacks => \%callbacks };
 }
 
 sub unscrub {
     my $self = shift;
     my $req = shift;
-    return $req->{arguments}; # for now
+    return Walk->new($req->{arguments})->walk(sub {
+        my $node = shift;
+        my $ref = ref $node->value;
+    });
 }
 
 1;
