@@ -38,7 +38,7 @@ sub request {
     my ($method, @args) = @_;
     my $scrub = $self->{scrub}->scrub(\@args);
     $self->{handle}->push_write(json => {
-        method => $method,
+        method => $method =~ m/^\d+$/ ? int $method : $method,
         arguments => $scrub->{object},
         callbacks => $scrub->{callbacks},
         links => [],
