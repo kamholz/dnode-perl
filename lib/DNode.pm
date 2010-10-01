@@ -5,7 +5,7 @@ use warnings;
 
 use AnyEvent::Socket qw/tcp_connect/;
 use AnyEvent::Handle;
-require './Conn.pm';
+use DNode::Conn;
 
 sub new {
     my $class = shift;
@@ -35,7 +35,7 @@ sub connect {
     tcp_connect $host, $port, sub {
         my $fh = shift;
         my $handle = new AnyEvent::Handle(fh => $fh);
-        my $conn = Conn->new(handle => $handle, block => $block);
+        my $conn = DNode::Conn->new(handle => $handle, block => $block);
         
         $conn->request('methods', ref $self->{constructor} eq 'CODE'
             ? $self->{constructor}($self->{remote}, $conn)

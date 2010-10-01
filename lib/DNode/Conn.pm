@@ -1,11 +1,11 @@
-package Conn;
-require './Scrub.pm';
+package DNode::Conn;
+use DNode::Scrub;
 
 sub new {
     my $class = shift;
     my $self;
     my %args = @_;
-    $args{scrub} = Scrub->new($args{handle});
+    $args{scrub} = DNode::Scrub->new($args{handle});
     
     my $handler; $handler = sub {
         my ($h, $json) = @_;

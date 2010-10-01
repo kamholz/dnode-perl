@@ -1,6 +1,6 @@
-package Scrub;
+package DNode::Scrub;
 use 5.0.10;
-require './Walk.pm';
+use DNode::Walk;
 
 sub new {
     return bless { callbacks => {}, last_id => 0 }, shift;
@@ -11,7 +11,7 @@ sub scrub {
     my $obj = shift;
     
     my %callbacks;
-    my $walked = Walk->new($obj)->walk(sub {
+    my $walked = DNode::Walk->new($obj)->walk(sub {
         my $node = shift;
         my $ref = ref $node->value;
         if ($ref eq 'CODE') {
@@ -31,7 +31,7 @@ sub unscrub {
     my $req = shift;
     my $cb = shift;
     
-    my $walked = Walk->new($req->{arguments})->walk(sub {
+    my $walked = DNode::Walk->new($req->{arguments})->walk(sub {
         my $node = shift;
         my $ref = ref $node->value;
         

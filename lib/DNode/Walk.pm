@@ -1,4 +1,4 @@
-package Walk;
+package DNode::Walk;
 
 sub new {
     my ($class, $object) = @_;
