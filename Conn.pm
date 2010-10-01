@@ -21,13 +21,14 @@ sub new {
 sub handle {
     my $self = shift;
     my $req = shift;
+    my $args = $self->{scrub}->unscrub($req, sub { $self->request(@_) });
+    
     if ($req->{method} =~ m/^\d+$/) {
-        my $args = $self->{scrub}->unscrub($req);
         my $id = $req->{method};
         $self->{scrub}{callbacks}{$id}(@$args);
     }
     elsif ($req->{method} eq 'methods') {
-        $self->{remote} = $self->{scrub}->unscrub($req)->[0];
+        $self->{remote} = $args->[0];
         $self->{block}($self->{remote});
     }
 }

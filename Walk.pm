@@ -39,7 +39,7 @@ sub _walk {
         }
         return \@acc;
     }
-    elsif ($ref eq 'GLOB' or $ref eq 'Regexp' or $ref eq '') {
+    elsif ($req =~ m/^(|CODE|GLOB|Regexp)$/) {
         return $value;
     }
     elsif ($ref->isa('HASH')) {
@@ -49,6 +49,9 @@ sub _walk {
     elsif ($ref->isa('ARRAY')) {
         return $self->_walk({ @$value }, $cb);
     }
+    else {
+        die "Unsupported reference: $ref";
+    }
 }
 
 package Node;
@@ -57,7 +60,14 @@ sub new {
     my $class = shift;
     return bless { @_ }, $class;
 }
+
+sub update {
+    my $self = shift;
+    $self->{value} = shift;
+}
+
 sub value { (shift)->{value} }
+
 sub path { @{ (shift)->{path} } }
 
 1;

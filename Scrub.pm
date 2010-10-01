@@ -1,4 +1,5 @@
 package Scrub;
+use 5.0.10;
 require './Walk.pm';
 
 sub new {
@@ -17,7 +18,7 @@ sub scrub {
             my $id = $self->{last_id} ++;
             $self->{callbacks}{$id} = $node->value;
             $callbacks{$id} = [ $node->path ];
-            $node->value = '[ Function ]';
+            $node->update('[ Function ]');
         }
     });
     
@@ -25,12 +26,26 @@ sub scrub {
 }
 
 sub unscrub {
+    use List::Util qw/first/;
     my $self = shift;
     my $req = shift;
-    return Walk->new($req->{arguments})->walk(sub {
+    my $cb = shift;
+    
+    my $walked = Walk->new($req->{arguments})->walk(sub {
         my $node = shift;
         my $ref = ref $node->value;
+        
+        my $id = first {
+            [ $node->path ] ~~ $req->{callbacks}{$_}
+        } keys %{ $req->{callbacks} };
+        
+        if (defined $id) {
+            my $f = sub { $cb->($id, @_) };
+            $self->{callbacks}{$id} = $f;
+            $node->update($f);
+        }
     });
+    return $walked;
 }
 
 1;
