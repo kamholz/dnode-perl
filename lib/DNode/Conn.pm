@@ -22,8 +22,8 @@ sub handle {
     my $self = shift;
     my $req = shift;
     my $args = $self->{scrub}->unscrub($req, sub {
-print "request @_\n";
-        $self->request(@_)
+        my $id = shift;
+        return sub { $self->request($id, @_ ) };
     });
     
     if ($req->{method} =~ m/^\d+$/) {

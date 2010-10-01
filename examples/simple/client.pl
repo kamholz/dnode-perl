@@ -5,8 +5,8 @@ use DNode;
 
 DNode->new({})->connect(5050, sub {
     my $remote = shift;
-    $remote->{f}(sub {
+    $remote->{f}(1337, sub {
         my $x = shift;
-        print "x=<$x>\n";
+        print "x = $x\n";
     })
 });

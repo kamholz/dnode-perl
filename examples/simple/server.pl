@@ -5,8 +5,8 @@ use DNode;
 
 DNode->new({
     f => sub {
+        my $x = shift;
         my $cb = shift;
-        print "cb=$cb\n";
-        $cb->(31337);
+        $cb->(30000 + $x);
     }
 })->listen(5050);

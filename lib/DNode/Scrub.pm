@@ -21,7 +21,7 @@ sub scrub {
             my $id = $self->{last_id} ++;
             $self->{callbacks}{$id} = $node->value;
             $callbacks{$id} = [ $node->path ];
-            $node->update('[ Function ]');
+            $node->update('[Function]');
         }
     });
     
@@ -43,9 +43,7 @@ sub unscrub {
         } keys %{ $req->{callbacks} };
         
         if (defined $id) {
-            my $f = sub { $cb->($id, @_) };
-            $self->{callbacks}{$id} = $f;
-            $node->update($f);
+            $node->update($cb->($id));
         }
     });
 }
