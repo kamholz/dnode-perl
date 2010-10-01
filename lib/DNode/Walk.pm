@@ -1,4 +1,5 @@
 package DNode::Walk;
+use Scalar::Util qw/blessed/;
 
 sub new {
     my ($class, $object) = @_;
@@ -42,12 +43,17 @@ sub _walk {
     elsif ($req =~ m/^(|CODE|GLOB|Regexp)$/) {
         return $value;
     }
-    elsif ($ref->isa('HASH')) {
-        #my @blessed = @{ Class::Inspector->methods($value) // [] };
-        return $self->_walk({ %$value }, $cb);
-    }
-    elsif ($ref->isa('ARRAY')) {
-        return $self->_walk({ @$value }, $cb);
+    elsif (blessed($ref)) {
+        if ($ref->isa('HASH')) {
+            #my @blessed = @{ Class::Inspector->methods($value) // [] };
+            return $self->_walk({ %$value }, $cb);
+        }
+        elsif ($ref->isa('ARRAY')) {
+            return $self->_walk([ @$value ], $cb);
+        }
+        else {
+            die "A blessed '$ref' is just...";
+        }
     }
     else {
         die "Unsupported reference: $ref";

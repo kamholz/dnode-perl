@@ -1,9 +1,12 @@
 package DNode::Scrub;
-use 5.0.10;
+use 5.10.0;
 use DNode::Walk;
 
 sub new {
-    return bless { callbacks => {}, last_id => 0 }, shift;
+    return bless {
+        callbacks => {},
+        last_id => 0,
+    }, shift;
 }
 
 sub scrub {
@@ -31,7 +34,7 @@ sub unscrub {
     my $req = shift;
     my $cb = shift;
     
-    my $walked = DNode::Walk->new($req->{arguments})->walk(sub {
+    return DNode::Walk->new($req->{arguments})->walk(sub {
         my $node = shift;
         my $ref = ref $node->value;
         
@@ -45,7 +48,6 @@ sub unscrub {
             $node->update($f);
         }
     });
-    return $walked;
 }
 
 1;
