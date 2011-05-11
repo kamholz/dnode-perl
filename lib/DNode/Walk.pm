@@ -42,7 +42,7 @@ sub _walk {
         }
         return \@acc;
     }
-    elsif ($req =~ m/^(|CODE|GLOB|Regexp)$/) {
+    elsif ($ref =~ m/^(|CODE|GLOB|Regexp)$/) {
         return $value;
     }
     elsif (blessed($ref)) {
