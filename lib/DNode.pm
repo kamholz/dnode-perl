@@ -3,7 +3,7 @@ use 5.10.0;
 use strict;
 use warnings;
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 use AnyEvent::Socket qw/tcp_connect tcp_server/;
 use AnyEvent::Handle;
