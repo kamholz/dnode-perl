@@ -1,5 +1,7 @@
 package DNode::Conn;
 use DNode::Scrub;
+use warnings;
+use strict;
 
 sub new {
     my $class = shift;

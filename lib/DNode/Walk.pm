@@ -1,5 +1,7 @@
 package DNode::Walk;
 use Scalar::Util qw/blessed/;
+use warnings;
+use strict;
 
 sub new {
     my ($class, $object) = @_;

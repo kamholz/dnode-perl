@@ -1,6 +1,8 @@
 package DNode::Scrub;
 use 5.10.0;
 use DNode::Walk;
+use warnings;
+use strict;
 
 sub new {
     return bless {
