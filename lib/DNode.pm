@@ -68,9 +68,15 @@ sub _handle {
     my ($self, $fh, $block, $kwargs) = @_;
     my $handle = new AnyEvent::Handle(
         fh => $fh,
-        ($self->{events}{error} ? 
-            (on_error => $self->{events}{error})
-            : ()),
+        on_error => sub {
+            my ($handle, $fatal, $msg) = @_;
+            if ($self->{events}{error}) {
+                $self->{events}{error}->($msg);
+            }
+            else {
+                die $msg if $fatal;
+            }
+        },
         ($kwargs->{ssl} ? 
             ((defined $kwargs->{tls} ? $kwargs->{tls} : ()),
             (defined $kwargs->{tls_ctx} ? $kwargs->{tls_ctx} : ()))
